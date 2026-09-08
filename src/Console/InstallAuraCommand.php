@@ -4,6 +4,7 @@ namespace Laravel\Aura\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use RuntimeException;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Process;
 use function Laravel\Prompts\confirm;
@@ -64,7 +65,12 @@ class InstallAuraCommand extends Command
         $this->runNpmInstall();
 
         $this->components->info('Clearing caches...');
-        $this->runCommands(['php artisan route:clear', 'php artisan config:clear', 'php artisan view:clear']);
+        $this->runCommands([
+            'php artisan route:clear',
+            'php artisan config:clear',
+            'php artisan view:clear',
+            'php artisan cache:clear',
+        ]);
 
         $this->newLine();
         $this->components->info('Aura scaffolding installed successfully.');
@@ -105,17 +111,28 @@ class InstallAuraCommand extends Command
         $fs = new Filesystem;
 
         $this->components->info('Installing Livewire...');
-        $this->runCommands(['composer require livewire/livewire']);
+        $this->runCommands(['composer require livewire/livewire:^3.0']);
 
         $fs->ensureDirectoryExists(app_path('Livewire'));
         $fs->copyDirectory(__DIR__.'/../../stubs/livewire/app/Livewire', app_path('Livewire'));
 
         $fs->copyDirectory(__DIR__.'/../../stubs/livewire/resources/views', resource_path('views'));
 
+        $fs->ensureDirectoryExists(app_path('View/Components'));
+        $fs->copyDirectory(__DIR__.'/../../stubs/blade/app/View/Components', app_path('View/Components'));
+
+        $fs->copyDirectory(__DIR__.'/../../stubs/blade/resources/views/components', resource_path('views/components'));
+
         copy(__DIR__.'/../../stubs/livewire/routes/web.php', base_path('routes/web.php'));
         copy(__DIR__.'/../../stubs/livewire/routes/auth.php', base_path('routes/auth.php'));
 
         $fs->copyDirectory(__DIR__.'/../../stubs/common/resources/css', resource_path('css'));
+
+        $fs->ensureDirectoryExists(resource_path('js'));
+        if (! file_exists(resource_path('js/app.js'))) {
+            file_put_contents(resource_path('js/app.js'), '');
+        }
+
         copy(__DIR__.'/../../stubs/common/vite.config.js', base_path('vite.config.js'));
     }
 
@@ -163,8 +180,8 @@ class InstallAuraCommand extends Command
         $packages = [
             '@tailwindcss/vite' => '^4.0.0',
             'tailwindcss' => '^4.0.0',
-            'vite' => '^8.0.0',
-            'laravel-vite-plugin' => '^3.1',
+            'vite' => '^6.0.0',
+            'laravel-vite-plugin' => '^1.0',
         ];
 
         if ($stack === 'blade') {
@@ -205,6 +222,8 @@ class InstallAuraCommand extends Command
      * Run the given commands.
      *
      * @param  array<int, string>  $commands
+     *
+     * @throws \RuntimeException
      */
     protected function runCommands(array $commands): void
     {
@@ -215,17 +234,10 @@ class InstallAuraCommand extends Command
         });
 
         if (! $process->isSuccessful()) {
-            $this->error('The following command failed: '.implode(' && ', $commands));
-            $this->newLine();
-            $this->error($process->getErrorOutput());
+            throw new RuntimeException(
+                'The following command failed: '.implode(' && ', $commands).PHP_EOL.
+                $process->getErrorOutput()
+            );
         }
-    }
-
-    /**
-     * Replace a given string within a given file.
-     */
-    protected function replaceInFile(string $search, string $replace, string $path): void
-    {
-        file_put_contents($path, str_replace($search, $replace, file_get_contents($path)));
     }
 }
