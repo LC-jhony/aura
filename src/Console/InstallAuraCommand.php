@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Process;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
 
 class InstallAuraCommand extends Command
 {
@@ -58,7 +60,7 @@ class InstallAuraCommand extends Command
             $this->call('migrate');
         }
 
-        $this->updateNodePackages();
+        $this->updateNodePackages($stack);
         $this->runNpmInstall();
 
         $this->newLine();
@@ -115,7 +117,7 @@ class InstallAuraCommand extends Command
         copy(__DIR__.'/../../stubs/livewire/routes/web.php', base_path('routes/web.php'));
         copy(__DIR__.'/../../stubs/livewire/routes/auth.php', base_path('routes/auth.php'));
 
-        $fs->copyDirectory(__DIR__.'/../../stubs/common/resources', resource_path(''));
+        $fs->copyDirectory(__DIR__.'/../../stubs/common/resources/css', resource_path('css'));
         copy(__DIR__.'/../../stubs/common/vite.config.js', base_path('vite.config.js'));
 
         if (file_exists(resource_path('views/welcome.blade.php'))) {
@@ -163,7 +165,7 @@ class InstallAuraCommand extends Command
     /**
      * Update the package.json file with the required Node dependencies.
      */
-    protected function updateNodePackages(): void
+    protected function updateNodePackages(string $stack): void
     {
         $packages = [
             '@tailwindcss/vite' => '^4.0.0',
@@ -171,6 +173,10 @@ class InstallAuraCommand extends Command
             'vite' => '^8.0.0',
             'laravel-vite-plugin' => '^3.1',
         ];
+
+        if ($stack === 'blade') {
+            $packages['alpinejs'] = '^3.4.2';
+        }
 
         if (file_exists(base_path('package.json'))) {
             $json = json_decode(file_get_contents(base_path('package.json')), true);
