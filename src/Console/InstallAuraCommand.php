@@ -24,15 +24,15 @@ class InstallAuraCommand extends Command
             return 1;
         }
 
-        $stack = $this->select(
+        $stack = select(
             'Which stack would you like to install?',
             ['blade' => 'Blade + Alpine.js', 'livewire' => 'Livewire + Alpine.js'],
             'blade'
         );
 
-        $pest = $this->confirm('Would you like to install Pest for testing?', true);
-        $dark = $this->confirm('Would you like dark mode support?', true);
-        $migrate = $this->confirm('Would you like to run the default migrations?', true);
+        $pest = confirm('Would you like to install Pest for testing?', true);
+        $dark = confirm('Would you like dark mode support?', true);
+        $migrate = confirm('Would you like to run the default migrations?', true);
 
         $this->newLine();
         $this->components->info('Installing Aura authentication scaffolding...');
