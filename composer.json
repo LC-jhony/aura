@@ -1,0 +1,43 @@
+{
+    "name": "laravel/aura",
+    "description": "Minimal Laravel authentication scaffolding with Blade and Tailwind.",
+    "require": {
+        "php": "^8.3",
+        "illuminate/console": "^11.0|^12.0|^13.0",
+        "illuminate/filesystem": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "illuminate/validation": "^11.0|^12.0|^13.0",
+        "symfony/console": "^7.0|^8.0"
+    },
+    "require-dev": {
+        "laravel/framework": "^11.0|^12.0|^13.0",
+        "orchestra/testbench-core": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^4.0",
+        "phpunit/phpunit": "^12.0",
+        "phpstan/phpstan": "^2.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Laravel\\Aura\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "LC-jhony",
+            "email": "jhonyapm94@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Laravel\\Aura\\AuraServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
