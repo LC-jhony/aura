@@ -63,6 +63,9 @@ class InstallAuraCommand extends Command
         $this->updateNodePackages($stack);
         $this->runNpmInstall();
 
+        $this->components->info('Clearing caches...');
+        $this->runCommands(['php artisan route:clear', 'php artisan config:clear', 'php artisan view:clear']);
+
         $this->newLine();
         $this->components->info('Aura scaffolding installed successfully.');
 
@@ -92,11 +95,6 @@ class InstallAuraCommand extends Command
 
         $fs->copyDirectory(__DIR__.'/../../stubs/common/resources', resource_path(''));
         copy(__DIR__.'/../../stubs/common/vite.config.js', base_path('vite.config.js'));
-
-        if (file_exists(resource_path('views/welcome.blade.php'))) {
-            $this->replaceInFile('/home', '/dashboard', resource_path('views/welcome.blade.php'));
-            $this->replaceInFile('Home', 'Dashboard', resource_path('views/welcome.blade.php'));
-        }
     }
 
     /**
@@ -119,11 +117,6 @@ class InstallAuraCommand extends Command
 
         $fs->copyDirectory(__DIR__.'/../../stubs/common/resources/css', resource_path('css'));
         copy(__DIR__.'/../../stubs/common/vite.config.js', base_path('vite.config.js'));
-
-        if (file_exists(resource_path('views/welcome.blade.php'))) {
-            $this->replaceInFile('/home', '/dashboard', resource_path('views/welcome.blade.php'));
-            $this->replaceInFile('Home', 'Dashboard', resource_path('views/welcome.blade.php'));
-        }
     }
 
     /**
