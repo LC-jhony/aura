@@ -29,7 +29,7 @@ class InstallAuraCommand extends Command
 
         $stack = select(
             'Which stack would you like to install?',
-            ['blade' => 'Blade + Alpine.js', 'livewire' => 'Livewire + Alpine.js'],
+            ['blade' => 'Blade + Alpine.js', 'livewire' => 'Livewire'],
             'blade'
         );
 
