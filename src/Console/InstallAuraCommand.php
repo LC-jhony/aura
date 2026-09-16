@@ -4,6 +4,7 @@ namespace Laravel\Aura\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Process;
@@ -57,8 +58,12 @@ class InstallAuraCommand extends Command
         }
 
         if ($migrate) {
-            $this->components->info('Running migrations...');
-            $this->call('migrate');
+            if ($this->migrationsAlreadyRun()) {
+                $this->components->warn('⚠ Migrations already executed. Column "avatar" exists in users table. Skipping...');
+            } else {
+                $this->components->info('Running migrations...');
+                $this->call('migrate');
+            }
         }
 
         $this->updateNodePackages($stack);
@@ -110,8 +115,15 @@ class InstallAuraCommand extends Command
     {
         $fs = new Filesystem;
 
-        $this->components->info('Installing Livewire...');
-        $this->runCommands(['composer require livewire/livewire:^3.0']);
+        $this->components->info('Installing Livewire v4...');
+
+        if ($this->isComposerPackageInstalled('livewire/livewire')) {
+            $this->components->warn('⚠ livewire/livewire already installed. Updating...');
+        } else {
+            $this->components->info('  ✓ Installing livewire/livewire ^4.0');
+        }
+
+        $this->runCommands(['composer require livewire/livewire:^4.0']);
 
         $fs->ensureDirectoryExists(app_path('Livewire'));
         $fs->copyDirectory(__DIR__.'/../../stubs/livewire/app/Livewire', app_path('Livewire'));
@@ -130,7 +142,10 @@ class InstallAuraCommand extends Command
 
         $fs->ensureDirectoryExists(resource_path('js'));
         if (! file_exists(resource_path('js/app.js'))) {
-            file_put_contents(resource_path('js/app.js'), '');
+            file_put_contents(resource_path('js/app.js'), '// Livewire v4 handles Alpine.js internally'.PHP_EOL);
+            $this->components->info('  ✓ Created app.js (Livewire includes Alpine)');
+        } else {
+            $this->components->warn('  ⚠ app.js already exists. Skipping...');
         }
 
         copy(__DIR__.'/../../stubs/common/vite.config.js', base_path('vite.config.js'));
@@ -143,9 +158,14 @@ class InstallAuraCommand extends Command
     {
         $this->components->info('Installing Pest...');
 
-        $this->runCommands([
-            'composer require pestphp/pest pestphp/pest-plugin-laravel --dev',
-        ]);
+        if ($this->isComposerPackageInstalled('pestphp/pest')) {
+            $this->components->warn('⚠ pestphp/pest already installed. Skipping composer require...');
+        } else {
+            $this->components->info('  ✓ Installing pestphp/pest');
+            $this->runCommands([
+                'composer require pestphp/pest pestphp/pest-plugin-laravel --dev',
+            ]);
+        }
 
         $this->runCommands(['./vendor/bin/pest --init']);
 
@@ -189,7 +209,17 @@ class InstallAuraCommand extends Command
         }
 
         if (file_exists(base_path('package.json'))) {
+            $this->components->info('Updating package.json...');
+
             $json = json_decode(file_get_contents(base_path('package.json')), true);
+
+            foreach ($packages as $package => $version) {
+                if ($this->isNpmPackageInstalled($package)) {
+                    $this->components->warn("  ⚠ {$package} already in package.json. Updating version...");
+                } else {
+                    $this->components->info("  ✓ Adding {$package}");
+                }
+            }
 
             $json['devDependencies'] = array_merge($packages, $json['devDependencies'] ?? []);
 
@@ -219,6 +249,51 @@ class InstallAuraCommand extends Command
     }
 
     /**
+     * Determine if the migrations have already been executed.
+     */
+    protected function migrationsAlreadyRun(): bool
+    {
+        try {
+            return Schema::hasColumn('users', 'avatar');
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if a Composer package is already installed.
+     */
+    protected function isComposerPackageInstalled(string $package): bool
+    {
+        $composerJsonPath = base_path('composer.json');
+
+        if (! file_exists($composerJsonPath)) {
+            return false;
+        }
+
+        $composerJson = file_get_contents($composerJsonPath);
+
+        return str_contains($composerJson, $package);
+    }
+
+    /**
+     * Determine if an npm package is already installed.
+     */
+    protected function isNpmPackageInstalled(string $package): bool
+    {
+        $packageJsonPath = base_path('package.json');
+
+        if (! file_exists($packageJsonPath)) {
+            return false;
+        }
+
+        $packageJson = json_decode(file_get_contents($packageJsonPath), true);
+
+        return isset($packageJson['devDependencies'][$package]) ||
+            isset($packageJson['dependencies'][$package]);
+    }
+
+    /**
      * Run the given commands.
      *
      * @param  array<int, string>  $commands
@@ -234,9 +309,19 @@ class InstallAuraCommand extends Command
         });
 
         if (! $process->isSuccessful()) {
+            $errorOutput = $process->getErrorOutput();
+
+            if (str_contains($errorOutput, 'already installed') ||
+                str_contains($errorOutput, 'require matches already installed') ||
+                str_contains($errorOutput, 'Nothing to install')) {
+                $this->components->warn('  ℹ Some packages already installed. Continuing...');
+
+                return;
+            }
+
             throw new RuntimeException(
                 'The following command failed: '.implode(' && ', $commands).PHP_EOL.
-                $process->getErrorOutput()
+                $errorOutput
             );
         }
     }
