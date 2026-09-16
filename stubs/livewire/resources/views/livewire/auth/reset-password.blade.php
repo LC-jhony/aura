@@ -1,29 +1,16 @@
 <div>
     <form wire:submit="resetPassword">
         <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model.live="email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+        <x-input wire:model.live="email" label="Email" type="email" name="email" id="email" required autofocus
+            autocomplete="username" />
 
         <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input wire:model.live="password" id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        <x-input wire:model.live="password" label="Password" type="password" name="password" id="password" required
+            autocomplete="new-password" />
 
         <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input wire:model.live="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
-                          type="password"
-                          name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
+        <x-input wire:model.live="password_confirmation" label="Confirm Password" type="password"
+            name="password_confirmation" id="password_confirmation" required autocomplete="new-password" />
 
         <div class="flex items-center justify-end mt-4">
             <x-primary-button>

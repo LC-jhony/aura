@@ -5,18 +5,8 @@
 
     <form wire:submit="confirmPassword">
         <!-- Password -->
-        <div>
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input wire:model.live="password"
-                          id="password"
-                          class="block mt-1 w-full"
-                          type="password"
-                          name="password"
-                          required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        <x-input wire:model.live="password" label="Password" type="password" name="password" id="password"
+            required autocomplete="current-password" />
 
         <div class="flex justify-end mt-4">
             <x-primary-button>
